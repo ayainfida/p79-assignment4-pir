@@ -1,0 +1,15 @@
+[project]
+name = "p79-assignment4-pir"
+version = "0.1.0"
+description = "Assignment 4: Private information retrieval"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cryptography>=46.0.5",
+]
+
+[dependency-groups]
+dev = [
+    "ty>=0.0.13",
+    "ruff>=0.14.13",
+]
