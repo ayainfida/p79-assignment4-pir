@@ -83,7 +83,7 @@ class TestEncoding(unittest.TestCase):
 
         # 2) Encoding with invalid types should raise a AssertionError
         with self.assertRaises(AssertionError):
-            encode_hint(90.0, self.A)
+            encode_hint(90.0, self.A) # type: ignore
         with self.assertRaises(AssertionError):
             encode_hint(self.seed, np.zeros_like(self.A))
 

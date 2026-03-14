@@ -7,7 +7,7 @@ These methods will be used by the PIR scheme.
 """
 class LWEMethods:
     @staticmethod
-    def sample_error_vector(N: int, q: int, dtype: type, B: int = 3) -> np.ndarray[RingElement]:
+    def sample_error_vector(N: int, q: int, dtype: type, B: int = 3) -> np.ndarray:
         """
         Sample small error vector from the interval [-B, B].
 
@@ -26,7 +26,7 @@ class LWEMethods:
         return RingElement.get_ring_vector(error, q).reshape(n_bits, N)
 
     @staticmethod
-    def sample_secret_vector(N: int, q: int, dtype: type) -> np.ndarray[RingElement]:
+    def sample_secret_vector(N: int, q: int, dtype: type) -> np.ndarray:
         """
         Sample secret vector from over the interval {-q, q}.
 
@@ -44,7 +44,7 @@ class LWEMethods:
         return RingElement.get_ring_vector(secret, q).reshape(n_bits, N)
     
     @staticmethod
-    def generate_matrix_A(N: int, n: int, q: int, dtype: type, seed: int) -> np.ndarray[RingElement]:
+    def generate_matrix_A(N: int, n: int, q: int, dtype: type, seed: int) -> np.ndarray:
         """
         Generate a random matrix A of size M x N with entries uniformly sampled from the ring given a fixed seed.
 

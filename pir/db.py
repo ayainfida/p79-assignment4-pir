@@ -6,7 +6,7 @@ This module defines a very simple Database class, which will be used in the PIR 
 It supports standard get and set operations, and it can be initialized with a specific PIR scheme: NAIVE, SQRT, or OPTIMIZED_SQRT.
 """
 class Database:
-    def __init__(self, N: int, data: list = None, scheme: PIRScheme = PIRScheme.SQRT, dtype=bool):
+    def __init__(self, N: int, data: list = [], scheme: PIRScheme = PIRScheme.SQRT, dtype=bool):
         assert N > 0, "N must be a positive integer."
         # For simiplicity, I will assume that N is complete square.
         assert np.sqrt(N) == int(np.sqrt(N)), "N must be a perfect square."
@@ -15,7 +15,7 @@ class Database:
         self.N = N
         self.scheme = scheme
 
-        if data is not None:
+        if len(data) > 0:
             assert len(data) == N, f"Data length must be equal to N. Given length: {len(data)} and N: {N}"
             self.data = np.array(data, dtype=dtype)
         else:
@@ -32,10 +32,10 @@ class Database:
         # Logs in case of updates to the database, which will then be used in the OPTIMIZED_SQRT scheme to update hints for the client.
         self.update_log = []
 
-    def get_dimensions(self) -> tuple[int, int]:
+    def get_dimensions(self) -> tuple[int, ...]:
         return self.data.shape
     
-    def object(self) -> np.ndarray[int]:
+    def object(self) -> np.ndarray:
         """
         Returns a numpy object of database.
         """
@@ -58,7 +58,7 @@ class Database:
 
         if self.scheme == PIRScheme.NAIVE:
             return int(self.data[idx])
-        elif self.scheme == PIRScheme.SQRT or self.scheme == PIRScheme.OPTIMIZED_SQRT:
+        else:
             row, col = self.get_row_col(idx)
             return int(self.data[row, col])
         
@@ -82,7 +82,7 @@ class Database:
                 self.update_log.append((idx, int(self.data[row, col]), value))
             self.data[row, col] = value
     
-    def get_logs(self) -> list[tuple[int, int]]:
+    def get_logs(self) -> list[tuple[int, int, int]]:
         """
         Get the update logs for the databas. 
         Avaliable only for the OPTIMIZED_SQRT scheme.

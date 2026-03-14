@@ -14,7 +14,7 @@ class ModInt:
     def __post_init__(self):
         object.__setattr__(self, "value", self.value % self.p)
 
-    def __is_ring_element(self, other: object) -> object | None:
+    def __is_ring_element(self, other: object) -> "ModInt":
         # Checks if the other object is a ModInt and
         # if it belongs to the same ring (i.e., has the same modulus)
         if isinstance(other, int):
@@ -25,41 +25,43 @@ class ModInt:
             raise ValueError("Elements must belong to the same ring.")
         return other
     
-    def __add__(self, other: Self) -> Self:
+    def __add__(self, other: object) -> Self:
         """
         Add two elements mod p.
         """
         other = self.__is_ring_element(other)
         return type(self)(self.value + other.value, self.p)
 
-    def __radd__(self, other: Self) -> Self:
+    def __radd__(self, other: object) -> Self:
         """
         Right addition to support int + ModInt.
         """
         return self.__add__(other)
     
-    def __sub__(self, other: Self) -> Self:
+    def __sub__(self, other: object) -> Self:
         """
         Subtract two elements mod p.
         """
         other = self.__is_ring_element(other)
         return type(self)(self.value - other.value, self.p)
     
-    def __rsub__(self, other: Self) -> Self:
+    def __rsub__(self, other: object) -> Self:
         """
         Right subtraction to support int - ModInt.
         """
         other = self.__is_ring_element(other)
         return type(self)(other.value - self.value, self.p)
     
-    def __mul__(self, other: Self) -> Self:
+    def __mul__(self, other: object) -> Self:
         """
         Multiply two elements mod p.
         """
+        if isinstance(other, int):
+            return type(self)(self.value * other, self.p)
         other = self.__is_ring_element(other)
         return type(self)(self.value * other.value, self.p)
     
-    def __rmul__(self, other: Self) -> Self:
+    def __rmul__(self, other: object) -> Self:
         """
         Right multiplication to support int * ModInt.
         """
@@ -95,21 +97,25 @@ class ModInt:
             raise ValueError("Shift amount must be a non-negative integer.")
         return type(self)(self.value >> other, self.p)
     
-    def __and__(self, other: Self) -> Self:
+    def __and__(self, other: object) -> Self:
         """
         Bitwise AND of two modulo p elements.
         """
+        if isinstance(other, int):
+            return type(self)(self.value & other, self.p)
         other = self.__is_ring_element(other)
         return type(self)(self.value & other.value, self.p)
 
-    def __ge__(self, other: Self) -> bool:
+    def __ge__(self, other: object) -> bool:
         """
         Greater than or equal comparison for modulo p elements.
         """
+        if isinstance(other, int):
+            other = type(self)(other, self.p)
         other = self.__is_ring_element(other)
         return self.value >= other.value
     
-    def __le__(self, other: Self) -> bool:
+    def __le__(self, other: object) -> bool:
         """
         Less than or equal comparison for modulo p elements.
         """
@@ -130,7 +136,7 @@ class RingElement(ModInt):
         super().__init__(value, p)
     
     @staticmethod
-    def get_ring_vector(vec: np.ndarray[int], p: int = p) -> np.ndarray[object]:
+    def get_ring_vector(vec: np.ndarray, p: int = p) -> np.ndarray:
         """
         Get the vector containing ring elements.
         """
@@ -138,7 +144,7 @@ class RingElement(ModInt):
         return np.array([RingElement(int(x), p) for x in vec], dtype=object)
     
     @staticmethod
-    def extract_normal_vector(vec: np.ndarray[object]) -> np.ndarray[int]:
+    def extract_normal_vector(vec: np.ndarray) -> np.ndarray:
         """
         Extract the normal vector from a vector of RingElements.
         """

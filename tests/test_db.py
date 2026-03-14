@@ -36,7 +36,7 @@ class TestDatabase(unittest.TestCase):
         # Should not allow invalid schemes and should raise a ValueError.
         N = 16
         with self.assertRaises(ValueError):
-            Database(N, scheme="INVALID_SCHEME")
+            Database(N, scheme="INVALID_SCHEME") # type: ignore
     
     def test_db_init_invalid_dtype(self):
         # Should not allow invalid datatypes and should raise a ValueError.

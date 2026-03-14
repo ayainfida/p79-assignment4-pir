@@ -48,7 +48,7 @@ class PIR:
     def setup(self, db: Database) -> bytes | None:
         raise NotImplementedError("Setup method must be implemented by the PIR server.")
 
-    def answer(self, response) -> bytes:
+    def answer(self, payload: bytes) -> bytes:
         raise NotImplementedError("Answer method must be implemented by the PIR server.")
 
     def recover(self, payload: bytes) -> int:
@@ -118,6 +118,7 @@ class PIRServer(PIR):
         # This method is used to update hints when there are updates to the database in the OPTIMIZED_SQRT scheme.
         assert self.scheme == PIRScheme.OPTIMIZED_SQRT, f"Update method is only used for OPTIMIZED_SQRT scheme. Current scheme: {self.scheme}"
         assert len(self.db.get_logs()) > 0, "No updates to the database to process for hints."
+        assert self.seed is not None and self.A_prime is not None and isinstance(self.seed, int) and isinstance(self.A_prime, np.ndarray), "Seed and A_prime must be set for OPTIMIZED_SQRT scheme before generating update hints."
         
         db_updates = self.db.get_logs()
         A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=self.seed, dtype=self.dtype)
@@ -146,11 +147,11 @@ class PIRClient(PIR):
 
     def download_hint(self, payload: bytes) -> None:
         # This method is used to download the hint (seed, A_prime) from the server in the OPTIMIZED_SQRT scheme. 
-        assert self.scheme == PIRScheme.OPTIMIZED_SQRT, "Hint is only received for OPTIMIZED_SQRT scheme. Current scheme: {}".format(self.scheme)
-
+        assert self.scheme == PIRScheme.OPTIMIZED_SQRT, f"Hint is only received for OPTIMIZED_SQRT scheme. Current scheme: {self.scheme}"
+        
         self.seed, self.A_prime = decode_hint(payload, N=self.N, n=self.n, q=self.q, dtype=self.dtype)
 
-    def query(self, idx: int | Tuple[int, int]) -> PIRMessage:
+    def query(self, idx: int | Tuple[int, int]) -> bytes:
         # Generate a query for the given index in the database based on the PIR scheme, and then
         # generate a payload to send to the server. 
         # The payload will be generated based on the client's query and the PIR scheme used.
@@ -158,6 +159,8 @@ class PIRClient(PIR):
         # 1) generate the vector A, the secret vector s, and the error vector e 
         # If the scheme is OPTIMIZED_SQRT based then we assume the seed has been shared by server.
         seed = self.seed if self.scheme == PIRScheme.OPTIMIZED_SQRT else np.random.randint(0, self.q)
+        assert seed is not None, "Seed must be set for OPTIMIZED_SQRT scheme before generating query."
+
         self.A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=seed, dtype=self.dtype)
         self.s = LWEMethods.sample_secret_vector(N=self.n, q=self.q, dtype=self.dtype)
         self.error = LWEMethods.sample_error_vector(N=self.N, q=self.q, dtype=self.dtype, B=self.B)
@@ -205,8 +208,8 @@ class PIRClient(PIR):
         
         # 2) Recover the desired data item from the server's response based on the PIR scheme.
         r = RingElement.extract_normal_vector(r.flatten()).reshape(r.shape)
-        idx = self.query_idx if self.scheme == PIRScheme.NAIVE else self.query_idx[0]
+        idx = self.query_idx if self.scheme == PIRScheme.NAIVE else self.query_idx[0] # type: ignore
         bits = (r[:,idx] >= self.q // 4) & (r[:,idx] <= 3 * self.q // 4).astype(int)
-        value = sum(bits[i] << i for i in range(bits.shape[0]))
+        value = int(sum(bits[i] << i for i in range(bits.shape[0])))
 
         return value

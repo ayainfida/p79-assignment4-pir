@@ -16,7 +16,7 @@ def encode_little_endian(x: int, length: int = 32) -> bytes:
         b[i] = (x >> (8 * i)) & 0xFF
     return bytes(b)
 
-def encode_std_pir(A: np.ndarray[RingElement], c: np.ndarray[RingElement], length: int = 32) -> bytes:
+def encode_std_pir(A: np.ndarray, c: np.ndarray, length: int = 32) -> bytes:
     """
     Encode the standard PIR query into bytes:
     A | c
@@ -31,7 +31,7 @@ def encode_std_pir(A: np.ndarray[RingElement], c: np.ndarray[RingElement], lengt
 
     return A_bytes + c_bytes  
 
-def decode_std_pir(data: bytes, N: int, n: int, q: int, dtype: type, length: int = 32) -> tuple[np.ndarray[RingElement], np.ndarray[RingElement]]:
+def decode_std_pir(data: bytes, N: int, n: int, q: int, dtype: type, length: int = 32) -> tuple[np.ndarray, np.ndarray]:
     """
     Decode the standard PIR query from bytes:
     A | c
@@ -51,7 +51,7 @@ def decode_std_pir(data: bytes, N: int, n: int, q: int, dtype: type, length: int
 
     return A, c
 
-def encode_opt_pir(c: np.ndarray[RingElement], length: int = 32) -> bytes:
+def encode_opt_pir(c: np.ndarray, length: int = 32) -> bytes:
     """
     Encode the vector c into bytes
     """
@@ -60,7 +60,7 @@ def encode_opt_pir(c: np.ndarray[RingElement], length: int = 32) -> bytes:
 
     return b''.join(encode_little_endian(c_i.value, length) for c_i in c.flatten())
 
-def decode_opt_pir(data: bytes, N: int, q: int, dtype: type, length: int = 32) -> np.ndarray[RingElement]:
+def decode_opt_pir(data: bytes, N: int, q: int, dtype: type, length: int = 32) -> np.ndarray:
     """
     Decode the vector c from bytes
     """
@@ -73,7 +73,7 @@ def decode_opt_pir(data: bytes, N: int, q: int, dtype: type, length: int = 32) -
 
     return c
 
-def encode_hint(seed: int, A: np.ndarray[RingElement], length: int = 32) -> bytes:
+def encode_hint(seed: int, A: np.ndarray, length: int = 32) -> bytes:
     """
     Encode the hint into bytes.
     """
@@ -86,7 +86,7 @@ def encode_hint(seed: int, A: np.ndarray[RingElement], length: int = 32) -> byte
 
     return seed_bytes + A_bytes
 
-def decode_hint(data: bytes, N: int, n: int, q: int, dtype: type, length: int = 32) -> tuple[int, np.ndarray[RingElement]]:
+def decode_hint(data: bytes, N: int, n: int, q: int, dtype: type, length: int = 32) -> tuple[int, np.ndarray]:
     """
     Decode the hint from bytes.
     """

@@ -48,8 +48,10 @@ class TestPIR(unittest.TestCase):
         self.client_sqrt_uint8 = PIRClient(scheme=PIRScheme.SQRT, dtype=np.uint8)
 
         self.client_optimized = PIRClient(scheme=PIRScheme.OPTIMIZED_SQRT)
+        assert self.hint_bool is not None, "Hint for OPTIMIZED_SQRT scheme should not be None"
         self.client_optimized.handle_message(self.hint_bool)
         self.client_optimized_uint8 = PIRClient(scheme=PIRScheme.OPTIMIZED_SQRT, dtype=np.uint8)
+        assert self.hint_uint8 is not None, "Hint for OPTIMIZED_SQRT scheme should not be None"
         self.client_optimized_uint8.handle_message(self.hint_uint8)
 
         # 4) Interaction Flow
@@ -58,31 +60,37 @@ class TestPIR(unittest.TestCase):
         # NAIVE scheme interaction
         self.query_client_naive_bool = self.client_naive.query(idx=self.idx)
         self.server_answer_naive_bool = self.server_naive.handle_message(self.query_client_naive_bool)
+        assert isinstance(self.server_answer_naive_bool, bytes), f"Expected bytes, got {type(self.server_answer_naive_bool)}"
         self.value_naive_bool = self.client_naive.handle_message(self.server_answer_naive_bool)
 
         self.query_client_naive_uint8 = self.client_naive_uint8.query(idx=self.idx)
         self.server_answer_naive_uint8 = self.server_naive_uint8.handle_message(self.query_client_naive_uint8)
+        assert isinstance(self.server_answer_naive_uint8, bytes), f"Expected bytes, got {type(self.server_answer_naive_uint8)}"
         self.value_naive_uint8 = self.client_naive_uint8.handle_message(self.server_answer_naive_uint8)
 
         # SQRT scheme interaction
         self.query_client_sqrt_bool = self.client_sqrt.query(idx=idx_tup)
         self.server_answer_sqrt_bool = self.server_sqrt.handle_message(self.query_client_sqrt_bool)
+        assert isinstance(self.server_answer_sqrt_bool, bytes), f"Expected bytes, got {type(self.server_answer_sqrt_bool)}"
         self.value_sqrt_bool = self.client_sqrt.handle_message(self.server_answer_sqrt_bool)
 
         self.query_client_sqrt_uint8 = self.client_sqrt_uint8.query(idx=idx_tup)
         self.server_answer_sqrt_uint8 = self.server_sqrt_uint8.handle_message(self.query_client_sqrt_uint8)
+        assert isinstance(self.server_answer_sqrt_uint8, bytes), f"Expected bytes, got {type(self.server_answer_sqrt_uint8)}"
         self.value_sqrt_uint8 = self.client_sqrt_uint8.handle_message(self.server_answer_sqrt_uint8)
 
         # OPTIMIZED_SQRT scheme interaction
         self.query_client_optimized_bool = self.client_optimized.query(idx=idx_tup)
         self.server_answer_optimized_bool = self.server_optimized.handle_message(self.query_client_optimized_bool)
+        assert isinstance(self.server_answer_optimized_bool, bytes), f"Expected bytes, got {type(self.server_answer_optimized_bool)}"
         self.value_optimized_bool = self.client_optimized.handle_message(self.server_answer_optimized_bool)
 
         self.query_client_optimized_uint8 = self.client_optimized_uint8.query(idx=idx_tup)
         self.server_answer_optimized_uint8 = self.server_optimized_uint8.handle_message(self.query_client_optimized_uint8)
+        assert isinstance(self.server_answer_optimized_uint8, bytes), f"Expected bytes, got {type(self.server_answer_optimized_uint8)}"
         self.value_optimized_uint8 = self.client_optimized_uint8.handle_message(self.server_answer_optimized_uint8)
     
-    def check_msg_type_and_scheme(self, queries: list[bytes], scheme: PIRScheme, msg_type: PIRMessageType):
+    def check_msg_type_and_scheme(self, queries: list, scheme: PIRScheme, msg_type: PIRMessageType):
         for query in queries:
             msg = PIRMessage.from_bytes(query)
             self.assertEqual(msg.msg_type, msg_type)
@@ -189,11 +197,13 @@ class TestPIR(unittest.TestCase):
         idx_tup = self.db_optimized_uint8.get_row_col(idx)
         query_client_optimized_uint8 = self.client_optimized_uint8.query(idx=idx_tup)
         server_answer_optimized_uint8 = self.server_optimized_uint8.handle_message(query_client_optimized_uint8)
+        assert isinstance(server_answer_optimized_uint8, bytes), f"Expected bytes, got {type(server_answer_optimized_uint8)}"
         value_optimized_uint8 = self.client_optimized_uint8.handle_message(server_answer_optimized_uint8)
 
         idx_tup_1 = self.db_optimized_uint8.get_row_col(idx1)
         query_client_optimized_uint8_1 = self.client_optimized_uint8.query(idx=idx_tup_1)
         server_answer_optimized_uint8_1 = self.server_optimized_uint8.handle_message(query_client_optimized_uint8_1)
+        assert isinstance(server_answer_optimized_uint8_1, bytes), f"Expected bytes, got {type(server_answer_optimized_uint8_1)}"
         value_optimized_uint8_1 = self.client_optimized_uint8.handle_message(server_answer_optimized_uint8_1)
         
         # The retrieved value should reflect the updated value, as the client and server now both have the updated A_prime
@@ -223,7 +233,10 @@ class TestPIR(unittest.TestCase):
     def retrieve_value(self, client: PIRClient, server: PIRServer, idx) -> int:
         query = client.query(idx=idx)
         answer = server.handle_message(query)
+        assert isinstance(answer, bytes), f"Expected bytes, got {type(answer)}"
         value = client.handle_message(answer)
+
+        assert isinstance(value, int), f"Expected int, got {type(value)}"
 
         return value
     
