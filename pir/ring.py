@@ -30,6 +30,12 @@ class ModInt:
         """
         other = self.__is_ring_element(other)
         return type(self)(self.value + other.value, self.p)
+
+    def __radd__(self, other: Self) -> Self:
+        """
+        Right addition to support int + ModInt.
+        """
+        return self.__add__(other)
     
     def __sub__(self, other: Self) -> Self:
         """
@@ -45,6 +51,12 @@ class ModInt:
         other = self.__is_ring_element(other)
         return type(self)(self.value * other.value, self.p)
     
+    def __rmul__(self, other: Self) -> Self:
+        """
+        Right multiplication to support int * ModInt.
+        """
+        return self.__mul__(other)
+    
     def __eq__(self, other: object) -> bool:
         """
         Check if two modulo p elements are equal.
@@ -58,6 +70,29 @@ class ModInt:
         Negate a modulo p element.
         """
         return type(self)(-self.value, self.p)
+    
+    def __lshift__(self, other: object) -> Self:
+        """
+        Left shift a modulo p element by a non-negative integer.
+        """
+        if not isinstance(other, int) or other < 0:
+            raise ValueError("Shift amount must be a non-negative integer.")
+        return type(self)(self.value << other, self.p)
+    
+    def __rshift__(self, other: object) -> Self:
+        """
+        Right shift a modulo p element by a non-negative integer.
+        """
+        if not isinstance(other, int) or other < 0:
+            raise ValueError("Shift amount must be a non-negative integer.")
+        return type(self)(self.value >> other, self.p)
+    
+    def __and__(self, other: Self) -> Self:
+        """
+        Bitwise AND of two modulo p elements.
+        """
+        other = self.__is_ring_element(other)
+        return type(self)(self.value & other.value, self.p)
 
 # These classes inherits from ModInt which supports basic ring operations.
 @dataclass(frozen=True)    
