@@ -1,12 +1,11 @@
 from .db import Database
 from .ring import RingElement
-from pir import PIRServer, PIRClient
+from .pir import PIRServer, PIRClient
 from .defaults import q, n, DATABASE_SIZE
 from .message import PIRScheme, PIRMessageType, PIRMessage
 
 __all__ = [
     "Database",
-    "RingElement",
     "PIRServer",
     "PIRClient",
     "q",

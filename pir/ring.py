@@ -45,6 +45,13 @@ class ModInt:
         other = self.__is_ring_element(other)
         return type(self)(self.value - other.value, self.p)
     
+    def __rsub__(self, other: Self) -> Self:
+        """
+        Right subtraction to support int - ModInt.
+        """
+        other = self.__is_ring_element(other)
+        return type(self)(other.value - self.value, self.p)
+    
     def __mul__(self, other: Self) -> Self:
         """
         Multiply two elements mod p.
@@ -111,7 +118,7 @@ class RingElement(ModInt):
     @staticmethod
     def get_ring_vector(vec: np.ndarray[int], p: int = p) -> np.ndarray[object]:
         """
-        Get the vector containing ring element
+        Get the vector containing ring elements.
         """
         # Convert the input vector to a numpy array of RingElements
         return np.array([RingElement(int(x), p) for x in vec], dtype=object)
@@ -121,7 +128,6 @@ class RingElement(ModInt):
         """
         Extract the normal vector from a vector of RingElements.
         """
-        # print("Extracting normal vector from RingElement vector:", vec[0])
         return np.array([x.value for x in vec], dtype=int)
 
     def __repr__(self) -> str:
