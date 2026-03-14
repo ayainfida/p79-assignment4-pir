@@ -15,7 +15,7 @@ class Database:
         self.scheme = scheme
 
         if data is not None:
-            assert len(data) == N, "Data length must be equal to N. Given length: {} and N: {}".format(len(data), N)
+            assert len(data) == N, f"Data length must be equal to N. Given length: {len(data)} and N: {N}"
             self.data = np.array(data, dtype=dtype)
         else:
             self.data = np.zeros(N, dtype=dtype)
@@ -26,7 +26,10 @@ class Database:
         if scheme == PIRScheme.SQRT or scheme == PIRScheme.OPTIMIZED_SQRT:
             self.data = self.data.reshape((int(np.sqrt(N)), int(np.sqrt(N))))
         elif scheme != PIRScheme.NAIVE:
-            raise ValueError("Invalid PIR scheme. Given: {}".format(scheme))
+            raise ValueError(f"Invalid PIR scheme. Given: {scheme}")
+        
+        # Logs in case of updates to the database, which will then be used in the OPTIMIZED_SQRT scheme to update hints for the client.
+        self.update_log = []
 
     def get_dimensions(self) -> tuple[int, int]:
         return self.data.shape
@@ -68,6 +71,28 @@ class Database:
 
         if self.scheme == PIRScheme.NAIVE:
             self.data[idx] = value
-        elif self.scheme == PIRScheme.SQRT or self.scheme == PIRScheme.OPTIMIZED_SQRT:
+        elif self.scheme == PIRScheme.SQRT:
             row, col = self.get_row_col(idx)
             self.data[row, col] = value
+        elif self.scheme == PIRScheme.OPTIMIZED_SQRT:
+            row, col = self.get_row_col(idx)
+            # Log the update incase it's different from the current value
+            if self.data[row, col] != value:
+                self.update_log.append((idx, value))
+            self.data[row, col] = value
+    
+    def get_logs(self) -> list[tuple[int, int]]:
+        """
+        Get the update logs for the databas. 
+        Avaliable only for the OPTIMIZED_SQRT scheme.
+        """
+        assert self.scheme == PIRScheme.OPTIMIZED_SQRT, f"Update logs are only available for the OPTIMIZED_SQRT scheme. Given scheme: {self.scheme}"
+        return self.update_log
+
+    def clear_logs(self) -> None:
+        """
+        Clear the update logs for the database.
+        Avaliable only for the OPTIMIZED_SQRT scheme.
+        """
+        assert self.scheme == PIRScheme.OPTIMIZED_SQRT, f"Update logs are only available for the OPTIMIZED_SQRT scheme. Given scheme: {self.scheme}"
+        self.update_log = []
