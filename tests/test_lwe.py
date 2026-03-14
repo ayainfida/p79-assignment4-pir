@@ -210,6 +210,5 @@ def test_lwe_homomorphic_addition_one_bit(self):
             f"Dec(Enc({m1}) + Enc({m2})) should equal {m1 ^ m2}"
         )
 
-
 if __name__ == "__main__":
     unittest.main()

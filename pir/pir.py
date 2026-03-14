@@ -167,12 +167,14 @@ class PIRClient(PIR):
         query_vector = np.zeros((self.error.shape[0], self.N), dtype=int)
 
         if self.scheme == PIRScheme.NAIVE:
-            assert isinstance(idx, int), "For NAIVE scheme, idx must be an integer. Given: {}".format(idx)
+            assert isinstance(idx, int), f"For NAIVE scheme, idx must be an integer. Given: {idx}"
+            assert 0 <= idx < self.N, f"Index out of bounds for NAIVE scheme. Given: {idx} and N: {self.N}"
             # For the NAIVE scheme, the client will generate a a query vector
             # of length N with a 1 at the desired index and 0s elsewhere.
             query_vector[:, idx] = 1
         else:
-            assert isinstance(idx, tuple) and len(idx) == 2, "For SQRT based schemes, idx must be a tuple of (row, col). Given: {}".format(idx)
+            assert isinstance(idx, tuple) and len(idx) == 2, f"For SQRT based schemes, idx must be a tuple of (row, col). Given: {idx}"
+            assert 0 <= idx[0] < self.N and 0 <= idx[1] < self.N, f"Index out of bounds for SQRT scheme. Given: {idx} and n: {self.N}"
             # For the SQRT based schemes, the client will generate a query vector of length sqrt(N)
             # The query vector will set 1 for the column corresponding to the desired index and 0s elsewhere.
             query_vector[:, idx[1]] = 1
