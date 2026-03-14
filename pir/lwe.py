@@ -1,11 +1,5 @@
 import numpy as np
-
 from pir.ring import RingElement
-
-# default parameters for LWE
-q = 15 # modulo integer for the ring
-n = 512 # security parameter
-N = 1024 # number of samples, should be at least n*log(q) for security
 
 """
 This module contains the implementation of the LWE methods for sampling error vectors, secret vectors and generating the vector A.

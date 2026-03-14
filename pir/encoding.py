@@ -1,7 +1,6 @@
 import numpy as np
 from .ring import RingElement
 
-
 def decode_little_endian(b: bytes) -> int:
     """
     Decode a little-endian byte sequence to an integer.

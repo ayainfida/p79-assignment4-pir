@@ -1,12 +1,11 @@
-import random
-from .message import PIRMessage, PIRMessageType, PIRScheme
-from .ring import RingElement
-from .lwe import LWEMethods
-from .encoding import decode_opt_pir, encode_opt_pir, encode_std_pir, decode_std_pir, encode_hint, decode_hint
-from .db import Database
 import numpy as np
 from typing import Tuple
+from .db import Database
+from .lwe import LWEMethods
+from .ring import RingElement
 from .defaults import q, n, DATABASE_SIZE
+from .message import PIRMessage, PIRMessageType, PIRScheme
+from .encoding import decode_opt_pir, encode_opt_pir, encode_std_pir, decode_std_pir, encode_hint, decode_hint
 
 class PIR:
     """
@@ -198,7 +197,6 @@ class PIRClient(PIR):
         if self.scheme == PIRScheme.OPTIMIZED_SQRT:
             c_prime = decode_opt_pir(payload, N=self.N, q=self.q, dtype=self.dtype)
             r = c_prime - (self.A_prime @ self.s[..., None]).squeeze(-1)
-            print('A_prime shape', self.A_prime.shape, 's shape', self.s.shape, 'c_prime shape', c_prime.shape)
         else:
             A_prime, c_prime = decode_std_pir(payload, N=self.N, n=self.n, q=self.q, dtype=self.dtype)
             r = c_prime - (A_prime @ self.s[..., None]).squeeze(-1)

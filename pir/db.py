@@ -1,5 +1,5 @@
-from .message import PIRScheme
 import numpy as np
+from .message import PIRScheme
 
 """
 This module defines a very simple Database class, which will be used in the PIR scheme.
