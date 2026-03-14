@@ -35,7 +35,8 @@ class Database:
         """
         Returns a numpy object of database.
         """
-        return self.data.astype(int)
+        bit_matrix = np.stack([(self.data >> k) & 1 for k in range(8 if self.data.dtype == np.uint8 else 1)], axis=0)
+        return bit_matrix
     
     def get_row_col(self, idx: int) -> tuple[int, int]:
         """
@@ -70,15 +71,3 @@ class Database:
         elif self.scheme == PIRScheme.SQRT or self.scheme == PIRScheme.OPTIMIZED_SQRT:
             row, col = self.get_row_col(idx)
             self.data[row, col] = value
-
-if __name__ == "__main__":
-    db = Database(16, [0]*16, PIRScheme.NAIVE, dtype=np.uint8)
-    db.set(5, 1)
-    print(db.data)
-    db.set(15, 256)
-    print(db.data)
-    print(db.get(5))
-    print(db.get(15))
-    print(db.get(0))
-    print(db.object())
-    print(db.get_dimensions())
