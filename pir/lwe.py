@@ -66,6 +66,7 @@ class LWEMethods:
         """
         np.random.seed(seed)
         n_bits = 8 if dtype == np.uint8 else 1
+        A = np.random.randint(-q, q, size=(n_bits, N, n))
         
         return RingElement.get_ring_vector(A.flatten(), q).reshape(n_bits, N, n)
     
