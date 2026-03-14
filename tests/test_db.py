@@ -23,14 +23,14 @@ class TestDatabase(unittest.TestCase):
         N = 16
         db = Database(N, scheme=PIRScheme.SQRT, dtype=bool)
         db_naive = Database(N, scheme=PIRScheme.NAIVE, dtype=bool)
-        self.assertTrue(type(db.data[0][0]) == np.bool)
-        self.assertTrue(type(db_naive.data[0]) == np.bool)
+        self.assertTrue(type(db.data[0][0]) is np.bool)
+        self.assertTrue(type(db_naive.data[0]) is np.bool)
 
         # 2) uint8 database
         db_uint8 = Database(N, scheme=PIRScheme.SQRT, dtype=np.uint8)
         db_naive_uint8 = Database(N, scheme=PIRScheme.NAIVE, dtype=np.uint8)
-        self.assertTrue(type(db_uint8.data[0][0]) == np.uint8)
-        self.assertTrue(type(db_naive_uint8.data[0]) == np.uint8)
+        self.assertTrue(type(db_uint8.data[0][0]) is np.uint8)
+        self.assertTrue(type(db_naive_uint8.data[0]) is np.uint8)
     
     def test_db_init_invalid_scheme(self):
         # Should not allow invalid schemes and should raise a ValueError.

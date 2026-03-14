@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 from .encoding import decode_little_endian, encode_little_endian
 
 class PIRScheme(IntEnum):

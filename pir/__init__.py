@@ -1,7 +1,7 @@
 from .db import Database
+from .message import PIRScheme
 from .pir import PIRServer, PIRClient
 from .defaults import q, n, DATABASE_SIZE
-from .message import PIRScheme, PIRMessageType, PIRMessage
 
 __all__ = [
     "Database",
