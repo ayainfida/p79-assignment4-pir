@@ -1,10 +1,8 @@
 import random
 import unittest
 import numpy as np
-from pir import PIRClient, PIRServer, PIRScheme, Database, PIRMessage
 from pir.lwe import LWEMethods
 from pir.encoding import decode_opt_pir, encode_opt_pir, encode_std_pir, decode_std_pir, encode_hint, decode_hint
-from pir.ring import RingElement
 
 class TestEncoding(unittest.TestCase):
     def setUp(self):
@@ -14,7 +12,7 @@ class TestEncoding(unittest.TestCase):
         self.error = LWEMethods.sample_error_vector(N=4, q=16, dtype=np.uint8)
         self.seed = random.randint(0, 1000)
 
-        # Let's assume C = A @ s + e (mod q) for the standard PIR query, we're not adding the query vector here for simplicity here
+        # Let's assume C = A @ s + e (mod q) for the standard PIR query, we're not adding the query vector for simplicity here
         self.c = ((self.A @ self.s[..., None]).squeeze(-1) + self.error)
 
     def test_encode_decode_std_pir(self):
