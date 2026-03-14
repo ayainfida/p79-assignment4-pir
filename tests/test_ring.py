@@ -3,7 +3,7 @@ import numpy as np
 from pir.defaults import q
 from pir.ring import RingElement
 
-class TestRingOperationsOperations(unittest.TestCase):
+class TestRing(unittest.TestCase):
     def test_radd(self):
         # Wrap around modulo p 
         self.assertEqual(RingElement(2) + RingElement(q-1), RingElement(1))

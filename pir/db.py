@@ -10,6 +10,7 @@ class Database:
         assert N > 0, "N must be a positive integer."
         # For simiplicity, I will assume that N is complete square.
         assert np.sqrt(N) == int(np.sqrt(N)), "N must be a perfect square."
+        assert dtype in (bool, np.uint8), "Invalid datatype. Supported datatypes are bool and uint8."
 
         self.N = N
         self.scheme = scheme
