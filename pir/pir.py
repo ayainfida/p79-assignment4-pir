@@ -60,7 +60,6 @@ class PIR:
     def query(self, idx: int | Tuple[int, int]):
         raise NotImplementedError("Query method must be implemented by the PIR client.")
 
-
 class PIRServer(PIR):
     """
     This class represents the PIR server. It inherits from the PIR class and implements the
@@ -80,8 +79,8 @@ class PIRServer(PIR):
         # This seed will be used to generate the same matrix A for all clients, ensuring consistency in the responses.
         if self.scheme == PIRScheme.OPTIMIZED_SQRT:
             self.seed = np.random.randint(0, self.q)
-            A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=self.seed)
-            self.A_prime = (A.T @ self.db.object().T).T
+            A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=self.seed, dtype=self.dtype)
+            self.A_prime = self.db.object() @ A
             payload = encode_hint(self.seed, self.A_prime)
 
             return PIRMessage(PIRMessageType.HINT, self.scheme, payload).to_bytes()
@@ -89,23 +88,23 @@ class PIRServer(PIR):
     def answer(self, payload: bytes) -> bytes:
         # Handle the client's query and generate the appropriate response based on the PIR scheme.
         if self.scheme == PIRScheme.OPTIMIZED_SQRT:
-            c = decode_opt_pir(payload, N=self.N, q=self.q)
-            c_prime = (c.T @ self.db.object().T).T
-
+            c = decode_opt_pir(payload, N=self.N, q=self.q, dtype=self.dtype)
+            c_prime = (self.db.object() @ c[..., None]).squeeze(-1)
         else:
-            A, c = decode_std_pir(payload, N=self.N, n=self.n, q=self.q)
+            A, c = decode_std_pir(payload, N=self.N, n=self.n, q=self.q, dtype=self.dtype)
             if self.scheme == PIRScheme.SQRT:
-                A_prime = (A.T @ self.db.object().T).T
-                c_prime = (c.T @ self.db.object().T).T
+                A_prime = self.db.object() @ A
+                c_prime = (self.db.object() @ c[..., None]).squeeze(-1)
             else:
-                A_prime = RingElement.get_ring_vector(np.zeros((self.N, self.n), dtype=int).flatten(), self.q).reshape(self.N, self.n)
-                c_prime = RingElement.get_ring_vector(np.zeros(self.N, dtype=int), self.q)
-                # print('c shape', c.shape, 'c_prime shape', c_prime.shape)
-                for i in range(self.N):
-                    if self.db.object()[i]:
-                        # print(A_prime[i], A[i])
-                        A_prime[i] += A[i]
-                        c_prime[i] += c[i]
+                n_bits = 8 if self.dtype == np.uint8 else 1
+                A_prime = RingElement.get_ring_vector(np.zeros(self.N * self.n * n_bits, dtype=int).flatten(), self.q).reshape(n_bits, self.N, self.n)
+                c_prime = RingElement.get_ring_vector(np.zeros(self.N * n_bits, dtype=int), self.q).reshape(n_bits, self.N)
+
+                for i in range(n_bits):
+                    for j in range(self.N):
+                        if self.db.object()[i][j]:
+                            A_prime[i,j] += A[i, j]
+                            c_prime[i, j] += c[i, j]
             
         # Encode the response into bytes to send back to the client.
         payload = encode_opt_pir(c_prime) if self.scheme == PIRScheme.OPTIMIZED_SQRT else encode_std_pir(A_prime, c_prime)
@@ -124,7 +123,7 @@ class PIRClient(PIR):
         # This method is used to download the hint (seed, A_prime) from the server in the OPTIMIZED_SQRT scheme. 
         assert self.scheme == PIRScheme.OPTIMIZED_SQRT, "Hint is only received for OPTIMIZED_SQRT scheme. Current scheme: {}".format(self.scheme)
 
-        self.seed, self.A_prime = decode_hint(payload, N=self.N, n=self.n, q=self.q)
+        self.seed, self.A_prime = decode_hint(payload, N=self.N, n=self.n, q=self.q, dtype=self.dtype)
 
     def query(self, idx: int | Tuple[int, int]) -> PIRMessage:
         # Generate a query for the given index in the database based on the PIR scheme, and then
@@ -134,87 +133,104 @@ class PIRClient(PIR):
         # 1) generate the vector A, the secret vector s, and the error vector e 
         # If the scheme is OPTIMIZED_SQRT based then we assume the seed has been shared by server.
         seed = self.seed if self.scheme == PIRScheme.OPTIMIZED_SQRT else np.random.randint(0, self.q)
-        self.A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=seed)
-        self.s = LWEMethods.sample_secret_vector(N=self.n, q=self.q)
-        self.error = LWEMethods.sample_error_vector(N=self.N, q=self.q)
+        self.A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=seed, dtype=self.dtype)
+        self.s = LWEMethods.sample_secret_vector(N=self.n, q=self.q, dtype=self.dtype)
+        self.error = LWEMethods.sample_error_vector(N=self.N, q=self.q, dtype=self.dtype)
         # self.error = RingElement.get_ring_vector(np.zeros(self.N, dtype=int), self.q)
 
         # 2) generate a query for the given index in the database based on the PIR scheme.
-        query_vector = np.zeros(self.N, dtype=int)
+        query_vector = np.zeros((self.error.shape[0], self.N), dtype=int)
+
         if self.scheme == PIRScheme.NAIVE:
             assert isinstance(idx, int), "For NAIVE scheme, idx must be an integer. Given: {}".format(idx)
             # For the NAIVE scheme, the client will generate a a query vector
             # of length N with a 1 at the desired index and 0s elsewhere.
-            query_vector[idx] = 1
+            query_vector[:, idx] = 1
         else:
             assert isinstance(idx, tuple) and len(idx) == 2, "For SQRT based schemes, idx must be a tuple of (row, col). Given: {}".format(idx)
             # For the SQRT based schemes, the client will generate a query vector of length sqrt(N)
             # The query vector will set 1 for the column corresponding to the desired index and 0s elsewhere.
-            query_vector[idx[1]] = 1
+            query_vector[:, idx[1]] = 1
+        
         
         # We also store the idx for recovery later.
         self.query_idx = idx
         
         # 3) Calculate the vector c = A * s + e + query_vector (mod q) and encode the query into bytes to send to the server.
-        self.c = (self.A @ self.s + self.error + (self.q // 2) * query_vector)
+        self.c = (
+            (self.A @ self.s[..., None]).squeeze(-1)
+            + self.error
+            + (self.q // 2) * query_vector
+        )
+
         payload = encode_std_pir(self.A, self.c) if self.scheme != PIRScheme.OPTIMIZED_SQRT else encode_opt_pir(self.c)
-
-
-        # print("A:", self.A)
-        # print("s:", self.s)
-        # print("error:", self.error)
-        # print("query_vector:", query_vector)
-        # print("c:", self.c)
 
         return PIRMessage(PIRMessageType.QUERY, self.scheme, payload).to_bytes()
 
     def recover(self, payload: bytes) -> int:
         # 1) Decode the server's response based on the PIR scheme.
         if self.scheme == PIRScheme.OPTIMIZED_SQRT:
-            c_prime = decode_opt_pir(payload, N=self.N, q=self.q)
-            r = c_prime - (self.s.T @ self.A_prime.T).T
+            c_prime = decode_opt_pir(payload, N=self.N, q=self.q, dtype=self.dtype)
+            r = c_prime - (self.A_prime @ self.s[..., None]).squeeze(-1)
+            print('A_prime shape', self.A_prime.shape, 's shape', self.s.shape, 'c_prime shape', c_prime.shape, 'r shape', r.shape)
         else:
-            A_prime, c_prime = decode_std_pir(payload, N=self.N, n=self.n, q=self.q)
-            r = c_prime - (self.s.T @ A_prime.T).T
+            A_prime, c_prime = decode_std_pir(payload, N=self.N, n=self.n, q=self.q, dtype=self.dtype)
+            r = c_prime - (A_prime @ self.s[..., None]).squeeze(-1)
         
         # 2) Recover the desired data item from the server's response based on the PIR scheme.
-        r = RingElement.extract_normal_vector(r)
+        r = RingElement.extract_normal_vector(r.flatten()).reshape(r.shape)
         idx = self.query_idx if self.scheme == PIRScheme.NAIVE else self.query_idx[0]
-        # print(r, self.q // 4, 3 * self.q // 4)
+        bits = (r[:,idx] >= self.q // 4) & (r[:,idx] <= 3 * self.q // 4).astype(int)
+        value = sum(bits[i] << i for i in range(bits.shape[0]))
 
-        return 1 if r[idx] >= self.q // 4 and r[idx] <= 3 * self.q // 4 else 0
+        return value
 
 
 
 if __name__ == "__main__":
     # # Example usage of the PIR server and client
     N = 16
-    q = 32
+    q = 2**15
     n = 2
-    db_list = [random.randint(0, 1) for _ in range(N)]
+    db_list = [random.randint(0, 255) for _ in range(N)]
+    dtype = np.uint8
     dim = int(np.sqrt(N))
-    dim = N
+    scheme = PIRScheme.NAIVE
+    # dim = N
 
     # set seed for reproducibility
     np.random.seed(42)
 
     # Create a database with N items and initialize the PIR server with the database.
-    db = Database(N, db_list, PIRScheme.NAIVE)
-    print("Database data:\n", db.object())
-    server = PIRServer(q=q, n=n, N=dim, scheme=PIRScheme.NAIVE)
+    db = Database(N, db_list, scheme, dtype=dtype)
+    # print("Database data:\n", db.object())
+    server = PIRServer(q=q, n=n, N=dim, scheme=scheme, dtype=dtype)
     hint = server.setup(db)
 
     # The client downloads the hint from the server in the OPTIMIZED_SQRT scheme.
-    client = PIRClient(q=q, n=n, N=dim, scheme=PIRScheme.NAIVE)
+    client = PIRClient(q=q, n=n, N=dim, scheme=scheme, dtype=dtype)
     # client.handle_message(hint)
 
-    for i in range(dim):
-        # for j in range(dim):
-            query_payload = client.query(idx=(i))
-            server_response = server.handle_message(query_payload)
-            result = client.handle_message(server_response)
-            assert result == db.get(i)
+
+
+    # for i in range(dim):
+    #     for j in range(dim):
+    #         query_payload = client.query(idx=i)
+    #         server_response = server.handle_message(query_payload)
+    #         result = client.handle_message(server_response)
+    #         print(f"Queried index: {(i, j)}, Recovered value: {result}, Actual value: {db.get(i * dim + j)}")
+    #         assert result == db.get(i * dim + j), f"Recovered value does not match database value at index {(i, j)}. Recovered: {result} and expected: {db.get(i * dim + j)}"
+    #         # break
+    #     break
     # query_payload = client.query(7)
+    for i in range(dim):
+        query_payload = client.query(idx=i)
+        server_response = server.handle_message(query_payload)
+        result = client.handle_message(server_response)
+        print(f"Queried index: {i}, Recovered value: {result}, Actual value: {db.get(i)}")
+        assert result == db.get(i), f"Recovered value does not match database value at index {i}. Recovered: {result} and expected: {db.get(i)}"
+        # break
+        # break
 
     # The server processes the client's query and generates a response.
     # response_payload = server.answer(query_payload)
