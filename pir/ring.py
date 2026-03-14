@@ -102,6 +102,20 @@ class ModInt:
         other = self.__is_ring_element(other)
         return type(self)(self.value & other.value, self.p)
 
+    def __ge__(self, other: Self) -> bool:
+        """
+        Greater than or equal comparison for modulo p elements.
+        """
+        other = self.__is_ring_element(other)
+        return self.value >= other.value
+    
+    def __le__(self, other: Self) -> bool:
+        """
+        Less than or equal comparison for modulo p elements.
+        """
+        other = self.__is_ring_element(other)
+        return self.value <= other.value
+
 # These classes inherits from ModInt which supports basic ring operations.
 @dataclass(frozen=True)    
 class RingElement(ModInt):
