@@ -78,7 +78,7 @@ class Database:
             row, col = self.get_row_col(idx)
             # Log the update incase it's different from the current value
             if self.data[row, col] != value:
-                self.update_log.append((idx, value))
+                self.update_log.append((idx, int(self.data[row, col]), value))
             self.data[row, col] = value
     
     def get_logs(self) -> list[tuple[int, int]]:

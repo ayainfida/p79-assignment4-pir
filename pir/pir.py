@@ -45,20 +45,23 @@ class PIR:
         else:
             raise ValueError(f"Invalid message type. Provided type: {type(message)}")
 
-    def setup(self, db: Database):
+    def setup(self, db: Database) -> bytes | None:
         raise NotImplementedError("Setup method must be implemented by the PIR server.")
 
-    def answer(self, response):
+    def answer(self, response) -> bytes:
         raise NotImplementedError("Answer method must be implemented by the PIR server.")
 
     def recover(self, payload: bytes) -> int:
         raise NotImplementedError("Recover method must be implemented by the PIR client.")
 
-    def download_hint(self, payload: bytes):
+    def download_hint(self, payload: bytes) -> None:
         raise NotImplementedError("Download hint method must be implemented by the PIR client.")
 
-    def query(self, idx: int | Tuple[int, int]):
+    def query(self, idx: int | Tuple[int, int]) -> bytes:
         raise NotImplementedError("Query method must be implemented by the PIR client.")
+    
+    def update(self) -> bytes:
+        raise NotImplementedError("Update method must be implemented by the PIR server")
 
 class PIRServer(PIR):
     """
@@ -110,6 +113,32 @@ class PIRServer(PIR):
         payload = encode_opt_pir(c_prime) if self.scheme == PIRScheme.OPTIMIZED_SQRT else encode_std_pir(A_prime, c_prime)
 
         return PIRMessage(PIRMessageType.ANSWER, self.scheme, payload).to_bytes()
+
+    # def update(self) -> bytes:
+    #     # This method is used to update hints when there are updates to the database in the OPTIMIZED_SQRT scheme.
+    #     assert self.scheme == PIRScheme.OPTIMIZED_SQRT, f"Update method is only used for OPTIMIZED_SQRT scheme. Current scheme: {self.scheme}"
+    #     assert len(self.db.get_logs()) > 0, "No updates to the database to process for hints."
+        
+    #     db_updates = self.db.get_logs()
+    #     delta_A_primes = np.zeros_like(self.A_prime)
+    #     A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=self.seed, dtype=self.dtype)
+
+    #     for idx, old, new in db_updates:
+    #         row, col = self.db.get_row_col(idx)
+    #         n_bits =  8 if self.dtype == np.uint8 else 1
+    #         old_bits = np.array([(old >> b) & 1 for b in range(n_bits)], dtype=int)
+    #         new_bits = np.array([(new >> b) & 1 for b in range(n_bits)], dtype=int)
+    #         delta_bits = new_bits - old_bits
+    #         delta_A_prime = delta_bits[:, None] * A[:, col, :]
+
+    #         self.A_prime[:, row, :] += delta_A_prime
+    #         delta_A_primes[:, row, :] = delta_A_prime
+
+    #     payload = encode_hint(self.seed, self.A_prime)
+
+    #     print('Delta A primes shape', np.array(delta_A_primes).shape, delta_A_primes)
+
+    #     return PIRMessage(PIRMessageType.HINT, self.scheme, payload).to_bytes()
 
 class PIRClient(PIR):
     """
@@ -172,7 +201,7 @@ class PIRClient(PIR):
         if self.scheme == PIRScheme.OPTIMIZED_SQRT:
             c_prime = decode_opt_pir(payload, N=self.N, q=self.q, dtype=self.dtype)
             r = c_prime - (self.A_prime @ self.s[..., None]).squeeze(-1)
-            print('A_prime shape', self.A_prime.shape, 's shape', self.s.shape, 'c_prime shape', c_prime.shape, 'r shape', r.shape)
+            print('A_prime shape', self.A_prime.shape, 's shape', self.s.shape, 'c_prime shape', c_prime.shape)
         else:
             A_prime, c_prime = decode_std_pir(payload, N=self.N, n=self.n, q=self.q, dtype=self.dtype)
             r = c_prime - (A_prime @ self.s[..., None]).squeeze(-1)
@@ -192,14 +221,15 @@ if __name__ == "__main__":
     N = 16
     q = 2**15
     n = 2
-    db_list = [random.randint(0, 255) for _ in range(N)]
-    dtype = np.uint8
+    np.random.seed(42)
+    random.seed(42)
+    db_list = [random.randint(0, 1) for _ in range(N)]
+    dtype = bool
     dim = int(np.sqrt(N))
-    scheme = PIRScheme.NAIVE
+    scheme = PIRScheme.OPTIMIZED_SQRT
     # dim = N
 
     # set seed for reproducibility
-    np.random.seed(42)
 
     # Create a database with N items and initialize the PIR server with the database.
     db = Database(N, db_list, scheme, dtype=dtype)
@@ -209,28 +239,36 @@ if __name__ == "__main__":
 
     # The client downloads the hint from the server in the OPTIMIZED_SQRT scheme.
     client = PIRClient(q=q, n=n, N=dim, scheme=scheme, dtype=dtype)
-    # client.handle_message(hint)
+    client.handle_message(hint)
+
+    print(db.object())
+    db.set(3, db.get(3) ^ 1)
+    db.set(5, db.get(5) ^ 1)
+    db.set(6, db.get(6) ^ 1)
+    print(db.get_logs())
+    server.update()
+    # print(db.data)
 
 
 
     # for i in range(dim):
     #     for j in range(dim):
-    #         query_payload = client.query(idx=i)
+    #         query_payload = client.query(idx=(i, j))
     #         server_response = server.handle_message(query_payload)
     #         result = client.handle_message(server_response)
     #         print(f"Queried index: {(i, j)}, Recovered value: {result}, Actual value: {db.get(i * dim + j)}")
     #         assert result == db.get(i * dim + j), f"Recovered value does not match database value at index {(i, j)}. Recovered: {result} and expected: {db.get(i * dim + j)}"
     #         # break
-    #     break
+        # break
     # query_payload = client.query(7)
-    for i in range(dim):
-        query_payload = client.query(idx=i)
-        server_response = server.handle_message(query_payload)
-        result = client.handle_message(server_response)
-        print(f"Queried index: {i}, Recovered value: {result}, Actual value: {db.get(i)}")
-        assert result == db.get(i), f"Recovered value does not match database value at index {i}. Recovered: {result} and expected: {db.get(i)}"
-        # break
-        # break
+    # for i in range(dim):
+    #     query_payload = client.query(idx=i)
+    #     server_response = server.handle_message(query_payload)
+    #     result = client.handle_message(server_response)
+    #     print(f"Queried index: {i}, Recovered value: {result}, Actual value: {db.get(i)}")
+    #     assert result == db.get(i), f"Recovered value does not match database value at index {i}. Recovered: {result} and expected: {db.get(i)}"
+    #     # break
+    #     # break
 
     # The server processes the client's query and generates a response.
     # response_payload = server.answer(query_payload)
