@@ -6,26 +6,27 @@ from .encoding import decode_opt_pir, encode_opt_pir, encode_std_pir, decode_std
 from .db import Database
 import numpy as np
 from typing import Tuple
+from .defaults import q, n, DATABASE_SIZE
 
 class PIR:
     """
     This class represent the PIR scheme. It serves as a base class from which client and server classes will inherit. 
     It contains the common parameters and methods used by both client and server.
     """
-    def __init__(self, q: int, n: int, N: int, scheme: PIRScheme = PIRScheme.SQRT, dtype : type = bool):
+    def __init__(self, q: int = q, n: int = n, N: int = DATABASE_SIZE, scheme: PIRScheme = PIRScheme.SQRT, dtype : type = bool):
+        # Ensure that a valid PIR scheme is used
+        assert isinstance(scheme, PIRScheme), f"Invalid PIR scheme. Given: {scheme}"
+        self.scheme = scheme
+        self.dtype = dtype
+
         # Default params for the PIR scheme
         self.q = q
         self.n = n
-        self.N = N
+        self.N = N if scheme == PIRScheme.NAIVE else int(np.sqrt(N))
 
         # Bookeeeping for the OPTIMIZED_SQRT scheme
         self.seed = None
         self.A_prime = None
-
-        # Ensure that a valid PIR scheme is used
-        assert isinstance(scheme, PIRScheme), "Invalid PIR scheme. Given: {}".format(scheme)
-        self.scheme = scheme
-        self.dtype = dtype
 
     def handle_message(self, message: bytes) -> bytes | int | None:
         """
@@ -68,7 +69,7 @@ class PIRServer(PIR):
     This class represents the PIR server. It inherits from the PIR class and implements the
     the server-specific methods:  initial setup, handling client query, and subsequent answers.
     """
-    def __init__(self, q: int, n: int, N: int, scheme: PIRScheme = PIRScheme.SQRT, dtype : type = bool):
+    def __init__(self, q: int = q, n: int = n, N: int = DATABASE_SIZE, scheme: PIRScheme = PIRScheme.SQRT, dtype : type = bool):
         super().__init__(q, n, N, scheme, dtype)
 
     def setup(self, db: Database) -> bytes | None:
@@ -140,8 +141,9 @@ class PIRClient(PIR):
     This class represents the PIR client. It inherits from the PIR class and implements the
     client-specific methods: generating queries and processing server responses.
     """
-    def __init__(self, q: int, n: int, N: int, scheme: PIRScheme = PIRScheme.SQRT, dtype : type = bool):
+    def __init__(self, q: int = q, n: int = n, N: int = DATABASE_SIZE, B: int = 2, scheme: PIRScheme = PIRScheme.SQRT, dtype : type = bool):
         super().__init__(q, n, N, scheme, dtype)
+        self.B = B
 
     def download_hint(self, payload: bytes) -> None:
         # This method is used to download the hint (seed, A_prime) from the server in the OPTIMIZED_SQRT scheme. 
@@ -159,7 +161,7 @@ class PIRClient(PIR):
         seed = self.seed if self.scheme == PIRScheme.OPTIMIZED_SQRT else np.random.randint(0, self.q)
         self.A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=seed, dtype=self.dtype)
         self.s = LWEMethods.sample_secret_vector(N=self.n, q=self.q, dtype=self.dtype)
-        self.error = LWEMethods.sample_error_vector(N=self.N, q=self.q, dtype=self.dtype)
+        self.error = LWEMethods.sample_error_vector(N=self.N, q=self.q, dtype=self.dtype, B=self.B)
         # self.error = RingElement.get_ring_vector(np.zeros(self.N, dtype=int), self.q)
 
         # 2) generate a query for the given index in the database based on the PIR scheme.
@@ -208,99 +210,3 @@ class PIRClient(PIR):
         value = sum(bits[i] << i for i in range(bits.shape[0]))
 
         return value
-
-
-
-# if __name__ == "__main__":
-#     # # Example usage of the PIR server and client
-#     N = 4
-#     q = 2**15
-#     n = 2
-#     np.random.seed(42)
-#     random.seed(42)
-#     db_list = [random.randint(0, 10) for _ in range(N)]
-#     dtype = np.uint8
-#     dim = int(np.sqrt(N))
-#     scheme = PIRScheme.OPTIMIZED_SQRT
-#     # dim = N
-
-#     # set seed for reproducibility
-
-#     # Create a database with N items and initialize the PIR server with the database.
-#     db = Database(N, db_list, scheme, dtype=dtype)
-#     # print("Database data:\n", db.object())
-#     server = PIRServer(q=q, n=n, N=dim, scheme=scheme, dtype=dtype)
-#     # hint = server.setup(db)
-
-#     # # The client downloads the hint from the server in the OPTIMIZED_SQRT scheme.
-#     # client = PIRClient(q=q, n=n, N=dim, scheme=scheme, dtype=dtype)
-#     # client.handle_message(hint)
-
-#     # print(db.object())
-#     db.set(0, db.get(0) ^ 1)
-#     db.set(2, db.get(2) ^ 1)
-#     db.set(1, db.get(1) ^ 1)
-#     print(db.get_logs())
-#     # print(server.A_prime)
-#     # server.update()
-#     server.setup(db)
-#     print('new A_prime:')
-#     print(server.A_prime)
-#     # print(db.data)
-
-#     # server1 = PIRServer(q=q, n=n, N=dim, scheme=scheme, dtype=dtype)
-#     # server1.setup(db)
-#     # print(server1.A_prime)
-
-
-
-#     # for i in range(dim):
-#     #     for j in range(dim):
-#     #         query_payload = client.query(idx=(i, j))
-#     #         server_response = server.handle_message(query_payload)
-#     #         result = client.handle_message(server_response)
-#     #         print(f"Queried index: {(i, j)}, Recovered value: {result}, Actual value: {db.get(i * dim + j)}")
-#     #         assert result == db.get(i * dim + j), f"Recovered value does not match database value at index {(i, j)}. Recovered: {result} and expected: {db.get(i * dim + j)}"
-#     #         # break
-#         # break
-#     # query_payload = client.query(7)
-#     # for i in range(dim):
-#     #     query_payload = client.query(idx=i)
-#     #     server_response = server.handle_message(query_payload)
-#     #     result = client.handle_message(server_response)
-#     #     print(f"Queried index: {i}, Recovered value: {result}, Actual value: {db.get(i)}")
-#     #     assert result == db.get(i), f"Recovered value does not match database value at index {i}. Recovered: {result} and expected: {db.get(i)}"
-#     #     # break
-#     #     # break
-
-#     # The server processes the client's query and generates a response.
-#     # response_payload = server.answer(query_payload)
-#     # # The client can then recover the desired data item from the server's response.
-#     # result = client.recover(response_payload)
-#     # print("Recovered value at index:", result)
-
-#     #  # Example usage of the PIR server and client
-#     # N = 4
-#     # q = 32
-#     # n = 2
-#     # dim = N
-
-#     # # set seed for reproducibility
-#     # np.random.seed(42)
-
-#     # # Create a database with N items and initialize the PIR server with the database.
-#     # db = Database(N, [0, 0, 1, 0], PIRScheme.NAIVE)
-#     # print("Database data:\n", db.data)
-#     # server = PIRServer(q=q, n=n, N=dim, scheme=PIRScheme.NAIVE)
-#     # server.setup(db)
-
-#     # # Create a PIR client and generate a query for a specific index in the database.
-#     # client = PIRClient(q=q, n=n, N=dim, scheme=PIRScheme.NAIVE)
-#     # query_payload = client.query(idx=3)
-#     # # query_payload = client.query(7)
-
-#     # # The server processes the client's query and generates a response.
-#     # response_payload = server.answer(query_payload)
-#     # # The client can then recover the desired data item from the server's response.
-#     # result = client.recover(response_payload)
-#     # print("Recovered value at index:", result)

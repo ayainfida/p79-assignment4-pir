@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import ClassVar, Self
+from .defaults import q
 import numpy as np
 
 @dataclass(frozen=True)
@@ -100,7 +101,7 @@ class RingElement(ModInt):
     """
     A class that represents an element of the ring of integers modulo an integer p.
     """
-    p: ClassVar[int] = 2**32
+    p: ClassVar[int] = q
 
     def __init__(self, value: int, p: int = p):
         if p is None:
@@ -125,25 +126,3 @@ class RingElement(ModInt):
 
     def __repr__(self) -> str:
         return f"{self.value}"
-
-if __name__ == "__main__":
-#     # Example usage of the RingElement class
-    a = RingElement(5)
-    b = RingElement(10)
-#     c = RingElement(15)
-
-
-    print("a + b =", 10 * a)  # Should be 15 mod p
-#     g = np.array([1, 2, 3])
-#     ring_vec = RingElement.get_ring_vector(g)
-#     print("Ring vector:", ring_vec)
-#     print(ring_vec @ g)  # Should be 3 mod p
-# #     print("a - c =", a - c)  # Should be -10 mod p
-# #     print("b == c?", b == c)  # Should be False
-# #     print("-a =", -a)  # Should be -5 mod p
-
-# #     vec = np.array([1, 2, 3, 4, 5])
-# #     ring_vec = RingElement.get_ring_vector(vec)
-# #     print("Ring vector:", ring_vec)
-# #     print("Type of ring vector elements:", type(ring_vec[0]))
-
