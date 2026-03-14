@@ -59,9 +59,11 @@ if __name__ == "__main__":
     response = server.handle_message(query)
 
     # Client decodes the response to get the desired value
-    assert response is not None, "Response should not be None."
+    assert response is not None and isinstance(response, bytes), "Response should not be None."
     print("Client is decoding the response...")
     retrieved_value = client.handle_message(response)
+    assert retrieved_value is not None, "Retrieved value should not be None."
+
     print(f"Retrieved value at index {idx_to_retrieve}: {retrieved_value}")
     
     assert retrieved_value == db.get(idx_to_retrieve), f"Retrieved value {retrieved_value} does not match the actual value {db.get(idx_to_retrieve)} in the database at index {idx_to_retrieve}."
