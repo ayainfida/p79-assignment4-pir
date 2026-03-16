@@ -159,56 +159,56 @@ class TestLWEMethods(unittest.TestCase):
                 "Decrypted bit vector should match the original multi-bit message"
             )
     
-def test_lwe_homomorphic_addition_one_bit(self):
-    # This test verifies the homomorphic addition property of LWE encryption.
-    # It checks that Dec(Enc(m1) + Enc(m2)) = m1 XOR m2 for bits m1 and m2.
-    q = 32
-    n = 4
+    def test_lwe_homomorphic_addition_one_bit(self):
+        # This test verifies the homomorphic addition property of LWE encryption.
+        # It checks that Dec(Enc(m1) + Enc(m2)) = m1 XOR m2 for bits m1 and m2.
+        q = 32
+        n = 4
 
-    # Same secret key is used for both encryptions
-    s = LWEMethods.sample_secret_vector(N=n, q=q, dtype=bool)
+        # Same secret key is used for both encryptions
+        s = LWEMethods.sample_secret_vector(N=n, q=q, dtype=bool)
 
-    test_cases = [
-        (0, 0, 0),
-        (0, 1, 1),
-        (1, 0, 1),
-        (1, 1, 0),
-    ]
+        test_cases = [
+            (0, 0, 0),
+            (0, 1, 1),
+            (1, 0, 1),
+            (1, 1, 0),
+        ]
 
-    for m1, m2, expected in test_cases:
-        # We generate fresh A, e for each encryption to ensure randomness, but the same secret key s is used.
-        A1 = LWEMethods.generate_matrix_A(N=1, n=n, q=q, dtype=bool, seed=11)
-        A2 = LWEMethods.generate_matrix_A(N=1, n=n, q=q, dtype=bool, seed=29)
+        for m1, m2, expected in test_cases:
+            # We generate fresh A, e for each encryption to ensure randomness, but the same secret key s is used.
+            A1 = LWEMethods.generate_matrix_A(N=1, n=n, q=q, dtype=bool, seed=11)
+            A2 = LWEMethods.generate_matrix_A(N=1, n=n, q=q, dtype=bool, seed=29)
 
-        e1 = LWEMethods.sample_error_vector(N=1, q=q, dtype=bool, B=1)
-        e2 = LWEMethods.sample_error_vector(N=1, q=q, dtype=bool, B=1)
+            e1 = LWEMethods.sample_error_vector(N=1, q=q, dtype=bool, B=1)
+            e2 = LWEMethods.sample_error_vector(N=1, q=q, dtype=bool, B=1)
 
-        As1 = (A1 @ s[..., None]).squeeze(-1)
-        As2 = (A2 @ s[..., None]).squeeze(-1)
+            As1 = (A1 @ s[..., None]).squeeze(-1)
+            As2 = (A2 @ s[..., None]).squeeze(-1)
 
-        c1 = As1 + e1 + m1 * (q // 2)
-        c2 = As2 + e2 + m2 * (q // 2)
+            c1 = As1 + e1 + m1 * (q // 2)
+            c2 = As2 + e2 + m2 * (q // 2)
 
-        # Homomorphic addition of ciphertexts
-        A_sum = A1 + A2
-        c_sum = c1 + c2
+            # Homomorphic addition of ciphertexts
+            A_sum = A1 + A2
+            c_sum = c1 + c2
 
-        # Decrypt
-        As_sum = (A_sum @ s[..., None]).squeeze(-1) # (A1 + A2) s = A1 s + A2 s = As1 + As2
-        intermediate = c_sum - As_sum
+            # Decrypt
+            As_sum = (A_sum @ s[..., None]).squeeze(-1) # (A1 + A2) s = A1 s + A2 s = As1 + As2
+            intermediate = c_sum - As_sum
 
-        intermediate = RingElement.extract_normal_vector(intermediate.flatten()).reshape(1)
+            intermediate = RingElement.extract_normal_vector(intermediate.flatten()).reshape(1)
 
-        decrypted = int(
-            ((intermediate >= q // 4) & (intermediate < 3 * q // 4)).astype(int)[0]
-        )
+            decrypted = int(
+                ((intermediate >= q // 4) & (intermediate < 3 * q // 4)).astype(int)[0]
+            )
 
-        # Verify that the decrypted result equals m1 XOR m2
-        self.assertEqual(
-            decrypted,
-            expected,
-            f"Dec(Enc({m1}) + Enc({m2})) should equal {m1 ^ m2}"
-        )
+            # Verify that the decrypted result equals m1 XOR m2
+            self.assertEqual(
+                decrypted,
+                expected,
+                f"Dec(Enc({m1}) + Enc({m2})) should equal {m1 ^ m2}"
+            )
 
 if __name__ == "__main__":
     unittest.main()
