@@ -9,7 +9,7 @@ This assignment implements a LWE-based Private Information Retrieval scheme from
 ## Features
 
 - **Three PIR schemes**: Naive ($O(N)$ communication), Square-root ($O(\sqrt{N})$), and Optimised square-root with offline hint
-- **Multi-bit support**: Works with `bool` (single-bit) and `uint8` (8 bits) database entries via bit-slicing
+- **Multi-bit support**: Works with single-bit and `uint8` (8 bits) database entries via bit-slicing
 - **Database auditing**: Updates to the database are logged, which can then be used by the server in `OPTIMIZED_SQRT` scheme to process incremental hint updates.
 - **Comprehensive testing**: LWE primitives, ring arithmetic, encoding round-trips, end-to-end retrieval, cross-scheme agreement, and database update correctness
 
@@ -101,7 +101,7 @@ python -m unittest tests.test_db -v         # Database tests
 
 ## Usage
 
-The API allows selection of the PIR scheme at construction time. You can use the PIR client and server in your own Python code as follows:
+The API allows selection of the PIR scheme, and the dtype at construction time (default it set to SQRT scheme with 1 bit retrieval). You can use the PIR client and server in your own Python code as follows:
 
 ```python
 import numpy as np
