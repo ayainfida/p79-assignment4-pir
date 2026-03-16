@@ -58,6 +58,8 @@ uv sync
 
 The `run.sh` script builds and runs the Docker image. It executes the type checker and linter during the build process and then runs the unit tests in a container.
 
+> **Note:** The tests could take upto 120 seconds.
+
 ```bash
 ./run.sh
 ```
