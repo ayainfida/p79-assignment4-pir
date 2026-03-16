@@ -1,6 +1,6 @@
 # Assignment 4: Private Information Retrieval (PIR)
 
-This assignment implements a LWE-based Private Information Retrieval scheme from scratch in Python. It supports three different schemes: a naive linear-scan scheme, a square-root scheme, and an optimised square-root scheme.
+This assignment implements a LWE-based Private Information Retrieval scheme from scratch in Python. It supports three different schemes: a naive scheme, a square-root scheme, and an optimised square-root scheme.
 
 ## ⚠️ Security Disclaimer
 
@@ -9,7 +9,7 @@ This assignment implements a LWE-based Private Information Retrieval scheme from
 ## Features
 
 - **Three PIR schemes**: Naive ($O(N)$ communication), Square-root ($O(\sqrt{N})$), and Optimised square-root with offline hint
-- **Multi-bit support**: Works with `bool` (single-bit) and `np.uint8` (8 bits) database entries via bit-slicing
+- **Multi-bit support**: Works with `bool` (single-bit) and `uint8` (8 bits) database entries via bit-slicing
 - **Database auditing**: Updates to the database are logged, which can then be used by the server in `OPTIMIZED_SQRT` scheme to process incremental hint updates.
 - **Comprehensive testing**: LWE primitives, ring arithmetic, encoding round-trips, end-to-end retrieval, cross-scheme agreement, and database update correctness
 
@@ -36,7 +36,7 @@ examples/
 └── demo_pir.py       # PIR demo
 
 report/
-└── P79_mafr2_A4.pdf  # Lab report
+└── P79_mafr2_A4.pdf  # report
 ```
 
 ## Setup

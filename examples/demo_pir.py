@@ -30,7 +30,8 @@ if __name__ == "__main__":
 
     # Initialize the database with some data
     print("Initializing the database with some data...")
-    data = [i for i in range(args.N)]
+    upper_bound = 255 if dtype == np.uint8 else 1
+    data = [random.randint(0, upper_bound - 1) for i in range(args.N)]
     db = Database(N=args.N, data=data, scheme=scheme, dtype=dtype)
 
     # Initialize the PIR server with the database
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     # Client wants to retrieve the value at a random index in the database
     idx_to_retrieve = random.randint(0, args.N - 1)
     print(f"Client wants to retrieve the value at index {idx_to_retrieve}.")
-    query = client.query(idx=idx_to_retrieve if args.scheme == PIRScheme.NAIVE else db.get_row_col(idx_to_retrieve))
+    query = client.query(idx=idx_to_retrieve if scheme == PIRScheme.NAIVE else db.get_row_col(idx_to_retrieve))
     
     # Server processes the query and returns the response
     assert query is not None, "Query should not be None."
