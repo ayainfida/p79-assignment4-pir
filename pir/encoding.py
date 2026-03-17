@@ -16,6 +16,10 @@ def encode_little_endian(x: int, length: int = 32) -> bytes:
         b[i] = (x >> (8 * i)) & 0xFF
     return bytes(b)
 
+# ---------------------------------------------------
+# Encoding and decoding functions for the PIRMessage 
+# ---------------------------------------------------
+
 def encode_std_pir(A: np.ndarray, c: np.ndarray, length: int = 32) -> bytes:
     """
     Encode the standard PIR query into bytes:

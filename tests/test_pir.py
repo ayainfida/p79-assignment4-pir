@@ -90,6 +90,9 @@ class TestPIR(unittest.TestCase):
         assert isinstance(self.server_answer_optimized_uint8, bytes), f"Expected bytes, got {type(self.server_answer_optimized_uint8)}"
         self.value_optimized_uint8 = self.client_optimized_uint8.handle_message(self.server_answer_optimized_uint8)
     
+    """
+    Helper method to check if the messages in the interaction flow are of the correct type and scheme.
+    """
     def check_msg_type_and_scheme(self, queries: list, scheme: PIRScheme, msg_type: PIRMessageType):
         for query in queries:
             msg = PIRMessage.from_bytes(query)
@@ -98,7 +101,6 @@ class TestPIR(unittest.TestCase):
     
     def test_client_query(self):
         # Ensure that the client's query is not None 
-        # print('hello', self.query_client_naive_bool)
         self.assertIsNotNone(self.query_client_naive_bool)
         self.assertIsNotNone(self.query_client_naive_uint8)
         self.assertIsNotNone(self.query_client_sqrt_bool)
@@ -230,6 +232,9 @@ class TestPIR(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.client_optimized_uint8.query(idx=5)  # idx should be a tuple of (row, col) for SQRT scheme, not an integer
     
+    """
+    Helper method to retrieve the value from the database for a given client-server pair and index.
+    """
     def retrieve_value(self, client: PIRClient, server: PIRServer, idx) -> int:
         query = client.query(idx=idx)
         answer = server.handle_message(query)
@@ -242,7 +247,7 @@ class TestPIR(unittest.TestCase):
     
     def _test_agreement(self, client_naive: PIRClient, server_naive: PIRServer, client_sqrt: PIRClient, server_sqrt: PIRServer, client_optimized: PIRClient, server_optimized: PIRServer, runs: int = 10):
         # This test verifies that all three schemes return the same value for the same queried index, ensuring they are consistent with each other.
-        # sample 10 random indices and check if the retrieved values from all three schemes match for each index
+        # sample random indices and check if the retrieved values from all three schemes match for each index
 
         indices = random.sample(range(DATABASE_SIZE), runs)
         for idx in indices:

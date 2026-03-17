@@ -85,7 +85,6 @@ class Database:
     def get_logs(self) -> list[tuple[int, int, int]]:
         """
         Get the update logs for the databas. 
-        Avaliable only for the OPTIMIZED_SQRT scheme.
         """
         assert self.scheme == PIRScheme.OPTIMIZED_SQRT, f"Update logs are only available for the OPTIMIZED_SQRT scheme. Given scheme: {self.scheme}"
         return self.update_log
@@ -93,7 +92,6 @@ class Database:
     def clear_logs(self) -> None:
         """
         Clear the update logs for the database.
-        Avaliable only for the OPTIMIZED_SQRT scheme.
         """
         assert self.scheme == PIRScheme.OPTIMIZED_SQRT, f"Update logs are only available for the OPTIMIZED_SQRT scheme. Given scheme: {self.scheme}"
         self.update_log = []

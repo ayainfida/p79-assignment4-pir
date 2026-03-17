@@ -164,7 +164,6 @@ class PIRClient(PIR):
         self.A = LWEMethods.generate_matrix_A(q=self.q, N=self.N, n=self.n, seed=seed, dtype=self.dtype)
         self.s = LWEMethods.sample_secret_vector(N=self.n, q=self.q, dtype=self.dtype)
         self.error = LWEMethods.sample_error_vector(N=self.N, q=self.q, dtype=self.dtype, B=self.B)
-        # self.error = RingElement.get_ring_vector(np.zeros(self.N, dtype=int), self.q)
 
         # 2) generate a query for the given index in the database based on the PIR scheme.
         query_vector = np.zeros((self.error.shape[0], self.N), dtype=int)
@@ -181,7 +180,6 @@ class PIRClient(PIR):
             # For the SQRT based schemes, the client will generate a query vector of length sqrt(N)
             # The query vector will set 1 for the column corresponding to the desired index and 0s elsewhere.
             query_vector[:, idx[1]] = 1
-        
         
         # We also store the idx for recovery later.
         self.query_idx = idx
